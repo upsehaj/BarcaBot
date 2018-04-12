@@ -1,12 +1,11 @@
 import requests
-import datetime
 import os
 
 class BotHandler:
 
     def __init__(self, token):
         self.token = token
-        self.api_url = "https://api.telegram.org/bot{}/".format(token)
+        self.api_url = 'https://api.telegram.org/bot{}/'.format(token)
 
     def get_updates(self, offset=None, timeout=60):
         method = 'getUpdates'
@@ -30,12 +29,29 @@ class BotHandler:
             last_update = get_result[len(get_result)-1]
         return last_update
 
+class Barca:
+
+    def __init__(self, token):
+        self.token = token
+        self.api_url = 'http://api.football-data.org/v1/'
+
+    def get_fix(self):
+        url_extend = 'teams/81/fixtures'
+        headers = {'X-Response-Control': 'minified', 'X-Auth-Token': self.token}
+        params = {'timeFrame': 'n7'}
+        resp = requests.get(self.api_url + url_extend, headers=headers)
+        result_json = resp.json()['fixtures']
+        return result_json
+
+    
+
 pwd = os.path.dirname(os.path.abspath(__file__))
 tok = open("{}/../tok.txt".format(pwd), "r")
 data = tok.readlines()
-token = data[0]
-barca_bot = BotHandler(token)  
-now = datetime.datetime.now()
+token1 = data[0]
+token2 = data[1]
+barca_bot = BotHandler(token1)  
+data_bot = Barca(token2)
 
 def main():  
 
@@ -49,15 +65,15 @@ def main():
         last_update_id = last_update['update_id']
         last_chat_text = last_update['message']['text']
         last_chat_id = last_update['message']['chat']['id']
-        # last_chat_name = last_update['message']['chat']['first_name']
+        last_chat_name = last_update['message']['chat']['first_name']
 
-        now = datetime.datetime.now()
+        
 
         if last_chat_text.lower() == 'score':
-            text = 'this is score'
+            text = 'Scores Feature is still under development. Sorry for inconvenience'
             barca_bot.send_message(last_chat_id, text)
         elif last_chat_text.lower() == 'fix':
-            text = 'this is fix'
+            text = 'Fixtures Feature is still under development. Sorry for inconvenience'
             barca_bot.send_message(last_chat_id, text)
         
         new_offset = last_update_id + 1
