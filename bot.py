@@ -1,11 +1,12 @@
 import requests
 import os
+from datetime import datetime, timezone
 
 class BotHandler:
 
     def __init__(self, token):
         self.token = token
-        self.api_url = 'https://api.telegram.org/bot{}/'.format(token)
+        self.api_url = "https://api.telegram.org/bot{}/".format(token)
 
     def get_updates(self, offset=None, timeout=60):
         method = 'getUpdates'
@@ -23,7 +24,7 @@ class BotHandler:
 
     def get_last_update(self):
         get_result = self.get_updates()
-        if len(get_result) <= 0:
+        if len(get_result) < 0:
             last_update = -1
         else:
             last_update = get_result[len(get_result)-1]
@@ -39,7 +40,7 @@ class Barca:
         url_extend = 'teams/81/fixtures'
         headers = {'X-Response-Control': 'minified', 'X-Auth-Token': self.token}
         params = {'timeFrame': 'n7'}
-        resp = requests.get(self.api_url + url_extend, headers=headers)
+        resp = requests.get(self.api_url + url_extend, headers=headers, params=params)
         result_json = resp.json()['fixtures']
         return result_json
 
@@ -48,15 +49,16 @@ class Barca:
 pwd = os.path.dirname(os.path.abspath(__file__))
 tok = open("{}/../tok.txt".format(pwd), "r")
 data = tok.readlines()
-token1 = data[0]
-token2 = data[1]
+tok.close()
+token1 = data[0].strip()
+token2 = data[1].strip()
 barca_bot = BotHandler(token1)  
 data_bot = Barca(token2)
 
 def main():  
 
     new_offset = None
-
+    codes = {455: 'LaLiga'}
     while True:
         barca_bot.get_updates(new_offset)
         last_update = barca_bot.get_last_update()
@@ -67,13 +69,28 @@ def main():
         last_chat_id = last_update['message']['chat']['id']
         last_chat_name = last_update['message']['chat']['first_name']
 
-        
+        fixtures = data_bot.get_fix()
 
         if last_chat_text.lower() == 'score':
-            text = 'Scores Feature is still under development. Sorry for inconvenience'
+
+            text = 'Scores Feature is still under development. Sorry for the inconvenience'
             barca_bot.send_message(last_chat_id, text)
         elif last_chat_text.lower() == 'fix':
-            text = 'Fixtures Feature is still under development. Sorry for inconvenience'
+            count = 0;
+            text = ''
+            for fixture in fixtures:
+                if count > 3:
+                    break
+                if fixture['status'] == 'TIMED':
+                    text = text + '{}\n'.format(codes[fixture['competitionId']])
+                    text = text + '{} v/s {}\n'.format(fixture['homeTeamName'], fixture['awayTeamName'])
+                    time = datetime.strptime(fixture['date'], '%Y-%m-%dT%H:%M:%SZ')
+                    time = time.replace(tzinfo=timezone.utc).astimezone(tz=None)
+                    text = text + time.strftime('%a, %b %d\n%I:%M %p')
+                    print(time)
+                    text = text + '\n\n'
+                    count += 1
+
             barca_bot.send_message(last_chat_id, text)
         
         new_offset = last_update_id + 1
