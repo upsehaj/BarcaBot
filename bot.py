@@ -1,7 +1,7 @@
 import requests
 import os
 from time import sleep
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 class BotHandler:
 
@@ -9,7 +9,7 @@ class BotHandler:
         self.token = token
         self.api_url = "https://api.telegram.org/bot{}/".format(token)
 
-    def get_updates(self, offset=None, timeout=30):
+    def get_updates(self, offset=None, timeout=10):
         method = 'getUpdates'
         params = {'timeout': timeout, 'offset': offset}
         resp = requests.get(self.api_url + method, params)
@@ -59,6 +59,7 @@ def main():
     codes = {455: 'LaLiga', 464: 'Champions League', 446: 'UEFA Cup'}
     subscription = []
     last_notif = datetime.strptime('2017-04-14T14:15:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    last_sc = datetime.now()
     while True:
         last_update = barca_bot.get_last_update(new_offset)
         if last_update == -1:
@@ -146,6 +147,29 @@ def main():
                 text = 'Dear {}, you are already Unsubscribed'.format(last_chat_name)
             barca_bot.send_message(last_chat_id, text)
             new_offset = last_update_id + 1
+
+        
+        fixtures = data_bot.get_fix('n2')
+        diff = datetime.now() - last_sc
+        if diff.total_seconds() >= 600:
+            last_sc = datetime.now()
+            text = ''
+            for fixture in fixtures:
+                if fixture['status'] == 'IN_PLAY' and fixture['competitionId'] in codes:
+                    text = text + '{}\n'.format(codes[fixture['competitionId']])
+                    text = text + '{} VS {}\n'.format(fixture['homeTeamName'], fixture['awayTeamName'])
+                    text = text + '[IN PROGRESS]\n'
+                    penalty_home = ''
+                    penalty_away = ''
+                    if 'penaltyShootout' in fixture:
+                        penalty_home = '({})'.format(fixture['result']['penaltyShootout']['goalsHomeTeam'])
+                        penalty_away = '({})'.format(fixture['result']['penaltyShootout']['goalsAwayTeam'])
+                    text = text + '{}{} - {}{}'.format(fixture['result']['goalsHomeTeam'], penalty_home, fixture['result']['goalsAwayTeam'], penalty_away)
+                    break
+            if text != '':
+                text = 'Score Update:\n' + text
+                for person in subscription:
+                    barca_bot.send_message(person, text)
 
 
 if __name__ == '__main__':  
