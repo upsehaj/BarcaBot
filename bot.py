@@ -54,18 +54,18 @@ token2 = data[1].strip()
 barca_bot = BotHandler(token1)  
 data_bot = Barca(token2)
 subscription = []
-with open("{}/../sub.txt".format(pwd), "r") as sub:
-        for line in sub:
-            try:
-                subscription.append(int(line.strip()))
-            except:
-                continue
+sub = open("{}/../sub.txt".format(pwd), "r")
+for line in sub:
+    try:
+        subscription.append(int(line.strip()))
+    except:
+        continue
+sub.close()
 
 def main():  
 
     new_offset = None
     codes = {455: 'LaLiga', 464: 'Champions League', 446: 'UEFA Cup'}
-    print(subscription)
     last_notif = datetime.strptime('2017-04-14T14:15:00Z', '%Y-%m-%dT%H:%M:%SZ')
     last_sc = datetime.now()
     last_home_goal = 0
@@ -149,7 +149,6 @@ def main():
                 text = 'Congratulations {}! You are now subscribed for automatic updates! Forca Barca!'.format(last_chat_name)
             else:
                 text = 'Dear {}, you are already Subscribed'.format(last_chat_name)
-            print(subscription)
             barca_bot.send_message(last_chat_id, text)
             new_offset = last_update_id + 1
 
@@ -161,7 +160,6 @@ def main():
                 text = 'Dear {}, you are unsubscribed from automatic updates! You will be missed!'.format(last_chat_name)
             else:
                 text = 'Dear {}, you are already Unsubscribed'.format(last_chat_name)
-            print(subscription)
             barca_bot.send_message(last_chat_id, text)
             new_offset = last_update_id + 1
 
@@ -242,6 +240,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         exit()
     finally:
-        with open("{}/../sub.txt".format(pwd), "w") as sub:
-            for person in subscription:
-                sub.write('{}\n'.format(person))
+        sub = open("{}/../sub.txt".format(pwd), "w")
+        for person in subscription:
+            sub.write('{}\n'.format(person))
+        sub.close()
