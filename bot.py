@@ -171,6 +171,26 @@ def main():
                 for person in subscription:
                     barca_bot.send_message(person, text)
 
+            text = ''
+            diff = datetime.now() - last_notif
+            if diff.total_seconds() > 40000:
+                for fixture in fixtures:
+                    if fixture['status'] == 'TIMED' and fixture['competitionId'] in codes:
+                        time = datetime.strptime(fixture['date'], '%Y-%m-%dT%H:%M:%SZ')
+                        diff = time - datetime.now()
+                        if diff.total_seconds() > 300:
+                            break
+                        last_notif = datetime.now()
+                        text = text + '{}\n'.format(codes[fixture['competitionId']])
+                        text = text + '{} VS {}\n'.format(fixture['homeTeamName'], fixture['awayTeamName'])
+                        time = time.replace(tzinfo=timezone.utc).astimezone(tz=None)
+                        text = text + time.strftime('%a, %d %b\n%I:%M %p')
+                        text = text + '\n\n'
+                        break
+                if text != '':
+                    text = 'Reminder: Match starts in 5 minutes!\n\n' + text
+                    for person in subscription:
+                        barca_bot.send_message(person, text)
 
 if __name__ == '__main__':  
     try:
