@@ -2,6 +2,7 @@ import requests
 import os
 from time import sleep
 from datetime import datetime, timezone, timedelta
+import csv
 
 class BotHandler:
 
@@ -58,7 +59,6 @@ def main():
     new_offset = None
     codes = {455: 'LaLiga', 464: 'Champions League', 446: 'UEFA Cup'}
     subscription = []
-    for
     last_notif = datetime.strptime('2017-04-14T14:15:00Z', '%Y-%m-%dT%H:%M:%SZ')
     last_sc = datetime.now()
     last_home_goal = 0
