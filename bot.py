@@ -58,8 +58,12 @@ def main():
     new_offset = None
     codes = {455: 'LaLiga', 464: 'Champions League', 446: 'UEFA Cup'}
     subscription = []
+    for
     last_notif = datetime.strptime('2017-04-14T14:15:00Z', '%Y-%m-%dT%H:%M:%SZ')
     last_sc = datetime.now()
+    last_home_goal = 0
+    last_away_goal = 0
+    
     while True:
         last_update = barca_bot.get_last_update(new_offset)
         if last_update == -1:
@@ -70,6 +74,7 @@ def main():
         last_chat_id = last_update['message']['chat']['id']
         last_chat_name = last_update['message']['chat']['first_name']
 
+        # score response
         if last_chat_text.lower() == 'score':
             fixtures = data_bot.get_fix('n2')
             text = ''
@@ -108,6 +113,7 @@ def main():
             barca_bot.send_message(last_chat_id, text)
             new_offset = last_update_id + 1
 
+        # fixtures response
         elif last_chat_text.lower() == 'fix':
             fixtures = data_bot.get_fix('n14')
             count = 0
@@ -128,6 +134,7 @@ def main():
             barca_bot.send_message(last_chat_id, text)
             new_offset = last_update_id + 1
 
+        # subscribe action
         elif last_chat_text.lower() == 'subscribe':
             text = ''
             if last_chat_id not in subscription:
@@ -138,6 +145,7 @@ def main():
             barca_bot.send_message(last_chat_id, text)
             new_offset = last_update_id + 1
 
+        # unsubscribe action
         elif last_chat_text.lower() == 'unsubscribe':
             text = ''
             if last_chat_id in subscription:
@@ -150,6 +158,32 @@ def main():
 
         
         fixtures = data_bot.get_fix('n2')
+
+        # goal update
+        text = ''
+        for fixture in fixtures:
+            if fixture['status'] == 'IN_PLAY' and fixture['competitionId'] in codes:
+                if fixture['result']['goalsHomeTeam'] == last_home_goal and fixture['result']['goalsAwayTeam'] == last_away_goal:
+                    break
+                last_home_goal = fixture['result']['goalsHomeTeam']
+                last_away_goal = fixture['result']['goalsAwayTeam']
+                text = text + '{}\n'.format(codes[fixture['competitionId']])
+                text = text + '{} VS {}\n'.format(fixture['homeTeamName'], fixture['awayTeamName'])
+                text = text + '[IN PROGRESS]\n'
+                penalty_home = ''
+                penalty_away = ''
+                if 'penaltyShootout' in fixture:
+                    penalty_home = '({})'.format(fixture['result']['penaltyShootout']['goalsHomeTeam'])
+                    penalty_away = '({})'.format(fixture['result']['penaltyShootout']['goalsAwayTeam'])
+                text = text + '{}{} - {}{}'.format(fixture['result']['goalsHomeTeam'], penalty_home, fixture['result']['goalsAwayTeam'], penalty_away)
+                break
+        if text != '':
+            text = 'Goal Scored!\n\n' + text
+            for person in subscription:
+                barca_bot.send_message(person, text)
+
+        # score update
+        text = ''
         diff = datetime.now() - last_sc
         if diff.total_seconds() >= 600:
             last_sc = datetime.now()
@@ -167,10 +201,11 @@ def main():
                     text = text + '{}{} - {}{}'.format(fixture['result']['goalsHomeTeam'], penalty_home, fixture['result']['goalsAwayTeam'], penalty_away)
                     break
             if text != '':
-                text = 'Score Update:\n' + text
+                text = 'Score Update:\n\n' + text
                 for person in subscription:
                     barca_bot.send_message(person, text)
 
+            # match reminder
             text = ''
             diff = datetime.now() - last_notif
             if diff.total_seconds() > 40000:
@@ -197,10 +232,3 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         exit()
-'''
-score on demand
-fixtures on demand
-score after every 15min
-score whenever a goal scored
-notify a day before the match 
-'''
