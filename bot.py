@@ -14,7 +14,6 @@ class BotHandler:
         params = {'timeout': timeout, 'offset': offset}
         resp = requests.get(self.api_url + method, params)
         result_json = resp.json()['result']
-        print(result_json)
         return result_json
 
     def send_message(self, chat_id, text):
@@ -84,7 +83,6 @@ def main():
             try:
                 last_chat_name = last_update['message']['chat']['first_name']
             except:
-                last_chat_name = last_update['message']['chat']['title']
                 isGroup = True
             # score response
             if last_chat_text.lower() == 'score' or last_chat_text.lower() == '/score':
@@ -259,6 +257,7 @@ if __name__ == '__main__':
     try:
         main()
     except (KeyboardInterrupt, SystemExit, SystemExit, Exception) as e:
+        print(e)
         pass
     finally:
         sub = open("{}/sub.txt".format(pwd), "w")
