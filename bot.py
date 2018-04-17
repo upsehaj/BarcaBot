@@ -46,7 +46,7 @@ class Barca:
         return result_json
 
 pwd = os.path.dirname(os.path.abspath(__file__))
-tok = open("{}/tok.txt".format(pwd), "r")
+tok = open("{}/../tok.txt".format(pwd), "r")
 data = tok.readlines()
 tok.close()
 token1 = data[0].strip()
