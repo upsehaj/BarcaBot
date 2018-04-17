@@ -2,6 +2,7 @@ import requests
 import os
 from time import sleep
 from datetime import datetime, timezone, timedelta
+import sqlite3
 
 class BotHandler:
 
@@ -52,14 +53,9 @@ token1 = data[0].strip()
 token2 = data[1].strip()
 barca_bot = BotHandler(token1)  
 data_bot = Barca(token2)
-subscription = []
-sub = open("{}/sub.txt".format(pwd), "r")
-for line in sub:
-    try:
-        subscription.append(int(line.strip()))
-    except:
-        continue
-sub.close()
+
+conn = sqlite3.connect('subscription.db')
+db = conn.cursor()
 
 def main():  
 
@@ -147,8 +143,11 @@ def main():
             # subscribe action
             elif last_chat_text.lower() == 'subscribe' or last_chat_text.lower() == '/subscribe':
                 text = ''
-                if last_chat_id not in subscription:
-                    subscription.append(last_chat_id)
+                db.execute("SELECT * FROM subscribers WHERE id = ?", (last_chat_id,))
+                rows = db.fetchall()
+                if len(rows) == 0:
+                    db.execute("INSERT INTO subscribers(id) VALUES(?)", (last_chat_id,))
+                    conn.commit()
                     if isGroup == False:
                         text = 'Congratulations {}! You are now subscribed for automatic updates! Forca Barca!'.format(last_chat_name)
                     else:
@@ -164,8 +163,11 @@ def main():
             # unsubscribe action
             elif last_chat_text.lower() == 'unsubscribe' or last_chat_text.lower() == '/unsubscribe':
                 text = ''
-                if last_chat_id in subscription:
-                    subscription.remove(last_chat_id)
+                db.execute("SELECT * FROM subscribers WHERE id = ?", (last_chat_id,))
+                rows = db.fetchall()
+                if len(rows) != 0:
+                    db.execute("DELETE FROM subscribers WHERE id = ?", (last_chat_id,))
+                    conn.commit()
                     if isGroup == False:
                         text = '{}, you are now unsubscribed from automatic updates! You will be missed!'.format(last_chat_name)
                     else:
@@ -205,8 +207,10 @@ def main():
 
         if text != '':
             text = 'Score Update:\n\n' + text
-            for person in subscription:
-                barca_bot.send_message(person, text)
+            db.execute("SELECT * FROM subscribers")
+            rows = db.fetchall()
+            for row in rows:
+                barca_bot.send_message(int(row[0]), text)
 
         # score update
         # text = ''
@@ -250,17 +254,15 @@ def main():
                         break
                 if text != '':
                     text = 'Reminder: Match starts in 5 minutes!\n\n' + text
-                    for person in subscription:
-                        barca_bot.send_message(person, text)
+                    db.execute("SELECT * FROM subscribers")
+                    rows = db.fetchall()
+                    for row in rows:
+                        barca_bot.send_message(int(row[0]), text)
 
 if __name__ == '__main__':  
     try:
         main()
     except (KeyboardInterrupt, SystemExit, SystemExit, Exception) as e:
         print(e)
+        conn.close()
         pass
-    finally:
-        sub = open("{}/sub.txt".format(pwd), "w")
-        for person in subscription:
-            sub.write('{}\n'.format(person))
-        sub.close()
