@@ -62,7 +62,6 @@ def main():
     new_offset = None
     codes = {455: 'LaLiga', 464: 'Champions League', 446: 'UEFA Cup'}
     last_notif = datetime.strptime('2017-04-14T14:15:00Z', '%Y-%m-%dT%H:%M:%SZ')
-    # last_sc = datetime.now()
     last_home_goal = 0
     last_away_goal = 0
     
@@ -149,9 +148,9 @@ def main():
                     db.execute("INSERT INTO subscribers(id) VALUES(?)", (last_chat_id,))
                     conn.commit()
                     if isGroup == False:
-                        text = 'Congratulations {}! You are now subscribed for automatic updates! Forca Barca!'.format(last_chat_name)
+                        text = 'Cheers {}! You are now subscribed for automatic updates! Forca Barca!'.format(last_chat_name)
                     else:
-                        text = 'Congratulations! This group is now subscribed for automatic updates! Forca Barca!'
+                        text = 'Cheers! This group is now subscribed for automatic updates! Forca Barca!'
                 else:
                     if isGroup == False:
                         text = '{}, you are already Subscribed'.format(last_chat_name)
@@ -212,52 +211,29 @@ def main():
             for row in rows:
                 barca_bot.send_message(int(row[0]), text)
 
-        # score update
-        # text = ''
-        # diff = datetime.now() - last_sc
-        # if diff.total_seconds() >= 899:
-        #     text = ''
-        #     for fixture in fixtures:
-        #         if fixture['status'] == 'IN_PLAY' and fixture['competitionId'] in codes:
-        #             text = text + '{}\n'.format(codes[fixture['competitionId']])
-        #             text = text + '{} VS {}\n'.format(fixture['homeTeamName'], fixture['awayTeamName'])
-        #             text = text + '[IN PROGRESS]\n'
-        #             penalty_home = ''
-        #             penalty_away = ''
-        #             if 'penaltyShootout' in fixture:
-        #                 penalty_home = '({})'.format(fixture['result']['penaltyShootout']['goalsHomeTeam'])
-        #                 penalty_away = '({})'.format(fixture['result']['penaltyShootout']['goalsAwayTeam'])
-        #             text = text + '{}{} - {}{}'.format(fixture['result']['goalsHomeTeam'], penalty_home, fixture['result']['goalsAwayTeam'], penalty_away)
-        #             last_sc = datetime.now()
-        #             break
-        #     if text != '':
-        #         text = 'Score Update:\n\n' + text
-        #         for person in subscription:
-        #             barca_bot.send_message(person, text)
-
-            # match reminder
-            text = ''
-            diff = datetime.now() - last_notif
-            if diff.total_seconds() > 40000:
-                for fixture in fixtures:
-                    if fixture['status'] == 'TIMED' and fixture['competitionId'] in codes:
-                        time = datetime.strptime(fixture['date'], '%Y-%m-%dT%H:%M:%SZ')
-                        diff = time - datetime.now()
-                        if diff.total_seconds() > 300:
-                            break
-                        last_notif = datetime.now()
-                        text = text + '{}\n'.format(codes[fixture['competitionId']])
-                        text = text + '{} VS {}\n'.format(fixture['homeTeamName'], fixture['awayTeamName'])
-                        time = time.replace(tzinfo=timezone.utc).astimezone(tz=None)
-                        text = text + time.strftime('%a, %d %b\n%I:%M %p')
-                        text = text + '\n\n'
+        # match reminder
+        text = ''
+        diff = datetime.now() - last_notif
+        if diff.total_seconds() > 40000:
+            for fixture in fixtures:
+                if fixture['status'] == 'TIMED' and fixture['competitionId'] in codes:
+                    time = datetime.strptime(fixture['date'], '%Y-%m-%dT%H:%M:%SZ')
+                    diff = time - datetime.now()
+                    if diff.total_seconds() > 300:
                         break
-                if text != '':
-                    text = 'Reminder: Match starts in 5 minutes!\n\n' + text
-                    db.execute("SELECT * FROM subscribers")
-                    rows = db.fetchall()
-                    for row in rows:
-                        barca_bot.send_message(int(row[0]), text)
+                    last_notif = datetime.now()
+                    text = text + '{}\n'.format(codes[fixture['competitionId']])
+                    text = text + '{} VS {}\n'.format(fixture['homeTeamName'], fixture['awayTeamName'])
+                    time = time.replace(tzinfo=timezone.utc).astimezone(tz=timezone(timedelta(hours=5, minutes=30)))
+                    text = text + time.strftime('%a, %d %b\n%I:%M %p')
+                    text = text + '\n\n'
+                    break
+            if text != '':
+                text = 'Reminder: Match starts in 5 minutes!\n\n' + text
+                db.execute("SELECT * FROM subscribers")
+                rows = db.fetchall()
+                for row in rows:
+                    barca_bot.send_message(int(row[0]), text)
 
 if __name__ == '__main__':  
     try:
@@ -265,4 +241,3 @@ if __name__ == '__main__':
     except (KeyboardInterrupt, SystemExit, SystemExit, Exception) as e:
         print(e)
         conn.close()
-        pass
