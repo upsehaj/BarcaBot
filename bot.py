@@ -144,10 +144,10 @@ def main():
             # subscribe action
             elif last_chat_text.lower() == 'subscribe' or last_chat_text.lower() == '/subscribe':
                 text = ''
-                db.execute("SELECT * FROM subscribers WHERE id = ?", (last_chat_id,))
+                db.execute("SELECT * FROM subscribers WHERE id = %s", (last_chat_id,))
                 rows = db.fetchall()
                 if len(rows) == 0:
-                    db.execute("INSERT INTO subscribers(id) VALUES(?)", (last_chat_id,))
+                    db.execute("INSERT INTO subscribers(id) VALUES(%s)", (last_chat_id,))
                     conn.commit()
                     if isGroup == False:
                         text = 'Cheers {}! You are now subscribed for automatic updates! Forca Barca!'.format(last_chat_name)
@@ -164,10 +164,10 @@ def main():
             # unsubscribe action
             elif last_chat_text.lower() == 'unsubscribe' or last_chat_text.lower() == '/unsubscribe':
                 text = ''
-                db.execute("SELECT * FROM subscribers WHERE id = ?", (last_chat_id,))
+                db.execute("SELECT * FROM subscribers WHERE id = %s", (last_chat_id,))
                 rows = db.fetchall()
                 if len(rows) != 0:
-                    db.execute("DELETE FROM subscribers WHERE id = ?", (last_chat_id,))
+                    db.execute("DELETE FROM subscribers WHERE id = %s", (last_chat_id,))
                     conn.commit()
                     if isGroup == False:
                         text = '{}, you are now unsubscribed from automatic updates! You will be missed!'.format(last_chat_name)
