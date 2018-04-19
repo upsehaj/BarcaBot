@@ -2,7 +2,7 @@ import requests
 import os
 from time import sleep
 from datetime import datetime, timezone, timedelta
-import sqlite3
+import psycopg2
 
 class BotHandler:
 
@@ -46,7 +46,7 @@ class Barca:
         return result_json
 
 pwd = os.path.dirname(os.path.abspath(__file__))
-tok = open("{}/../tok.txt".format(pwd), "r")
+tok = open("{}/tok.txt".format(pwd), "r")
 data = tok.readlines()
 tok.close()
 token1 = data[0].strip()
@@ -54,7 +54,9 @@ token2 = data[1].strip()
 barca_bot = BotHandler(token1)  
 data_bot = Barca(token2)
 
-conn = sqlite3.connect('subscription.db')
+
+DATABASE_URL = os.environ['DATABASE_URL']
+conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 db = conn.cursor()
 
 def main():  
