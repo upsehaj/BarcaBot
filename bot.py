@@ -203,6 +203,7 @@ def main():
             elif fixture['status'] != 'IN_PLAY' and fixture['competitionId'] in codes:
                 last_home_goal = 0
                 last_away_goal = 0
+                break
 
         if text != '':
             text = 'Score Update:\n\n' + text
