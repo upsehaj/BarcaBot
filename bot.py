@@ -223,7 +223,7 @@ def main():
                     if fixture['status'] == 'TIMED' and fixture['competitionId'] in codes:
                         time = datetime.strptime(fixture['date'], '%Y-%m-%dT%H:%M:%SZ')
                         diff = time - datetime.now()
-                        if diff.total_seconds() > 300:
+                        if diff.total_seconds() > 900:
                             break
                         last_notif = datetime.now()
                         text = text + '{}\n'.format(codes[fixture['competitionId']])
@@ -233,7 +233,7 @@ def main():
                         text = text + '\n\n'
                         break
                 if text != '':
-                    text = 'Reminder: Match starts in 5 minutes!\n\n' + text
+                    text = 'Reminder: Match starts in 15 minutes!\n\n' + text
                     db.execute("SELECT * FROM subscribers")
                     rows = db.fetchall()
                     for row in rows:
