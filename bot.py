@@ -68,21 +68,21 @@ def main():
     last_away_goal = 0
     
     while True:
-        flag = True
-        isGroup = False
-        last_update = barca_bot.get_last_update(new_offset)
-        if last_update == -1:
-            flag = False
-        if flag == True:    
-            last_update_id = last_update['update_id']
-            last_chat_text = last_update['message']['text']
-            last_chat_id = last_update['message']['chat']['id']
-            try:
-                last_chat_name = last_update['message']['chat']['first_name']
-            except:
-                isGroup = True
-            
-            try:
+        try:
+            flag = True
+            isGroup = False
+            last_update = barca_bot.get_last_update(new_offset)
+            if last_update == -1:
+                flag = False
+            if flag == True:    
+                last_update_id = last_update['update_id']
+                last_chat_text = last_update['message']['text']
+                last_chat_id = last_update['message']['chat']['id']
+                try:
+                    last_chat_name = last_update['message']['chat']['first_name']
+                except:
+                    isGroup = True
+
                 # score response
                 if last_chat_text.lower() == 'score' or last_chat_text.lower() == '/score':
                     fixtures = data_bot.get_fix('n2')
@@ -183,10 +183,7 @@ def main():
                             text = 'This group is already Unsubscribed'
                     barca_bot.send_message(last_chat_id, text)
                     new_offset = last_update_id + 1
-            except:
-                pass
-        
-        try:
+            
             fixtures = data_bot.get_fix('n2')
             # goal update
             text = ''
