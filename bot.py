@@ -35,14 +35,14 @@ class Barca:
 
     def __init__(self, token):
         self.token = token
-        self.api_url = 'http://api.football-data.org/v1/'
+        self.api_url = 'http://api.football-data.org/v2/'
 
     def get_fix(self, days):
-        url_extend = 'teams/81/fixtures'
+        url_extend = 'teams/81/matches'
         headers = {'X-Response-Control': 'minified', 'X-Auth-Token': self.token}
         params = {'timeFrame': days}
         resp = requests.get(self.api_url + url_extend, headers=headers, params=params)
-        result_json = resp.json()['fixtures']
+        result_json = resp.json()['matches']
         return result_json
 
 pwd = os.path.dirname(os.path.abspath(__file__))
