@@ -183,6 +183,9 @@ def main():
                         text = 'This group is already Unsubscribed'
                 barca_bot.send_message(last_chat_id, text)
                 new_offset = last_update_id + 1
+            
+            else:
+                new_offset = last_update_id + 1
         
         fixtures = data_bot.get_fix(datetime.now()-timedelta(days=2), datetime.now())
         # goal update
