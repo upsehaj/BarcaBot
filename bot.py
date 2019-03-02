@@ -69,177 +69,175 @@ def main():
     last_away_goal = 0
     
     while True:
-        try:
-            flag = True
-            isGroup = False
-            last_update = barca_bot.get_last_update(new_offset)
-            if last_update == -1:
-                flag = False
-            if flag == True:    
-                last_update_id = last_update['update_id']
-                last_chat_text = last_update['message']['text']
-                last_chat_id = last_update['message']['chat']['id']
-                try:
-                    last_chat_name = last_update['message']['chat']['first_name']
-                except:
-                    isGroup = True
+        
+        flag = True
+        isGroup = False
+        last_update = barca_bot.get_last_update(new_offset)
+        if last_update == -1:
+            flag = False
+        if flag == True:    
+            last_update_id = last_update['update_id']
+            last_chat_text = last_update['message']['text']
+            last_chat_id = last_update['message']['chat']['id']
+            try:
+                last_chat_name = last_update['message']['chat']['first_name']
+            except:
+                isGroup = True
 
-                # score response
-                if last_chat_text.lower() == 'score' or last_chat_text.lower() == '/score':
-                    fixtures = data_bot.get_fix(datetime.now()-timedelta(days=7), datetime.now())
-                    text = ''
-                    for fixture in fixtures:
-                        if fixture['status'] == 'IN_PLAY' and fixture['competition']['id'] in codes:
-                            text = text + '{}\n'.format(codes[fixture['competition']['id']])
-                            text = text + '{} VS {}\n'.format(fixture['homeTeam']['name'], fixture['awayTeam']['name'])
-                            text = text + '[IN PROGRESS]\n'
-                            penalty_home = ''
-                            penalty_away = ''
-                            if fixture['score']['penalties']['homeTeam'] is not None:
-                                penalty_home = '({})'.format(fixture['score']['penalties']['homeTeam'])
-                                penalty_away = '({})'.format(fixture['score']['penalties']['awayTeam'])
-                            text = text + '{}{} - {}{}'.format(fixture['score']['fullTime']['homeTeam'], penalty_home, fixture['score']['fullTime']['awayTeam'], penalty_away)
-                            break
-
-                        if text == '':
-                            fixtures = data_bot.get_fix(datetime.now()-timedelta(days=2), datetime.now())
-                            for fixture in fixtures:
-                                if fixture['status'] == 'FINISHED' and fixture['competition']['id'] in codes:
-                                    text = text + '{}\n'.format(codes[fixture['competition']['id']])
-                                    text = text + '{} VS {}\n'.format(fixture['homeTeam']['name'], fixture['awayTeam']['name'])
-                                    time = datetime.strptime(fixture['utcDate'], '%Y-%m-%dT%H:%M:%SZ')
-                                    time = time.replace(tzinfo=timezone.utc).astimezone(tz=None)
-                                    text = text + time.strftime('%a, %d %b\n')
-                                    text = text + '[FINISHED]\n'
-                                    penalty_home = ''
-                                    penalty_away = ''
-                                    if fixture['score']['penalties']['homeTeam'] is not None:
-                                        penalty_home = '({})'.format(fixture['score']['penalties']['homeTeam'])
-                                        penalty_away = '({})'.format(fixture['score']['penalties']['awayTeam'])
-                                    text = text + '{}{} - {}{}'.format(fixture['score']['fullTime']['homeTeam'], penalty_home, fixture['score']['fullTime']['awayTeam'], penalty_away)
-                                    break
-                    if text == '':
-                        text = 'No Recent Matches!'
-                    barca_bot.send_message(last_chat_id, text)
-                    new_offset = last_update_id + 1
-
-                # fixtures response
-                elif last_chat_text.lower() == 'fix' or last_chat_text.lower() == '/fix':
-                    fixtures = data_bot.get_fix(datetime.now(), datetime.now()+timedelta(days=14))
-                    count = 0
-                    text = ''
-                    for fixture in fixtures:
-                        if count > 4:
-                            break
-                        if fixture['status'] == 'SCHEDULED' and fixture['competition']['id'] in codes:
-                            text = text + '{}\n'.format(codes[fixture['competition']['id']])
-                            text = text + '{} VS {}\n'.format(fixture['homeTeam']['name'], fixture['awayTeam']['name'])
-                            time = datetime.strptime(fixture['utcDate'], '%Y-%m-%dT%H:%M:%SZ')
-                            time = time.replace(tzinfo=timezone.utc).astimezone(tz=timezone(timedelta(hours=5, minutes=30)))
-                            text = text + time.strftime('%a, %d %b\n%I:%M %p')
-                            text = text + '\n\n'
-                            count += 1
-                    if text == '':
-                        text = 'No Upcoming Matches!'
-                    barca_bot.send_message(last_chat_id, text)
-                    new_offset = last_update_id + 1
-
-                # subscribe action
-                elif last_chat_text.lower() == 'subscribe' or last_chat_text.lower() == '/subscribe':
-                    text = ''
-                    db.execute("SELECT * FROM subscribers WHERE id = %s", (last_chat_id,))
-                    rows = db.fetchall()
-                    if len(rows) == 0:
-                        db.execute("INSERT INTO subscribers(id) VALUES(%s)", (last_chat_id,))
-                        conn.commit()
-                        if isGroup == False:
-                            text = 'Cheers {}! You are now subscribed for automatic updates! Forca Barca!'.format(last_chat_name)
-                        else:
-                            text = 'Cheers! This group is now subscribed for automatic updates! Forca Barca!'
-                    else:
-                        if isGroup == False:
-                            text = '{}, you are already Subscribed'.format(last_chat_name)
-                        else:
-                            text = 'This group is already Subscribed'
-                    barca_bot.send_message(last_chat_id, text)
-                    new_offset = last_update_id + 1
-
-                # unsubscribe action
-                elif last_chat_text.lower() == 'unsubscribe' or last_chat_text.lower() == '/unsubscribe':
-                    text = ''
-                    db.execute("SELECT * FROM subscribers WHERE id = %s", (last_chat_id,))
-                    rows = db.fetchall()
-                    if len(rows) != 0:
-                        db.execute("DELETE FROM subscribers WHERE id = %s", (last_chat_id,))
-                        conn.commit()
-                        if isGroup == False:
-                            text = '{}, you are now unsubscribed from automatic updates! You will be missed!'.format(last_chat_name)
-                        else:
-                            text = 'This group is now unsubscribed from automatic updates! You will be missed!'
-                    else:
-                        if isGroup == False:
-                            text = '{}, you are already Unsubscribed'.format(last_chat_name)
-                        else:
-                            text = 'This group is already Unsubscribed'
-                    barca_bot.send_message(last_chat_id, text)
-                    new_offset = last_update_id + 1
-            
-            fixtures = data_bot.get_fix(datetime.now(), datetime.now()+timedelta(days=2))
-            # goal update
-            text = ''
-            for fixture in fixtures:
-                if fixture['status'] == 'IN_PLAY' and fixture['competition']['id'] in codes:
-                    if fixture['score']['fullTime']['homeTeam'] == last_home_goal and fixture['score']['fullTime']['awayTeam'] == last_away_goal:
+            # score response
+            if last_chat_text.lower() == 'score' or last_chat_text.lower() == '/score':
+                fixtures = data_bot.get_fix(datetime.now()-timedelta(days=7), datetime.now())
+                text = ''
+                for fixture in fixtures:
+                    if (fixture['status'] == 'IN_PLAY' or fixture['status'] == 'PAUSED') and fixture['competition']['id'] in codes:
+                        text = text + '{}\n'.format(codes[fixture['competition']['id']])
+                        text = text + '{} VS {}\n'.format(fixture['homeTeam']['name'], fixture['awayTeam']['name'])
+                        text = text + '[IN PROGRESS]\n'
+                        penalty_home = ''
+                        penalty_away = ''
+                        if fixture['score']['penalties']['homeTeam'] is not None:
+                            penalty_home = '({})'.format(fixture['score']['penalties']['homeTeam'])
+                            penalty_away = '({})'.format(fixture['score']['penalties']['awayTeam'])
+                        text = text + '{}{} - {}{}'.format(fixture['score']['fullTime']['homeTeam'], penalty_home, fixture['score']['fullTime']['awayTeam'], penalty_away)
                         break
-                    last_home_goal = fixture['score']['fullTime']['homeTeam']
-                    last_away_goal = fixture['score']['fullTime']['awayTeam']
+
+                    if text == '':
+                        fixtures = data_bot.get_fix(datetime.now()-timedelta(days=2), datetime.now())
+                        for fixture in fixtures:
+                            if fixture['status'] == 'FINISHED' and fixture['competition']['id'] in codes:
+                                text = text + '{}\n'.format(codes[fixture['competition']['id']])
+                                text = text + '{} VS {}\n'.format(fixture['homeTeam']['name'], fixture['awayTeam']['name'])
+                                time = datetime.strptime(fixture['utcDate'], '%Y-%m-%dT%H:%M:%SZ')
+                                time = time.replace(tzinfo=timezone.utc).astimezone(tz=None)
+                                text = text + time.strftime('%a, %d %b\n')
+                                text = text + '[FINISHED]\n'
+                                penalty_home = ''
+                                penalty_away = ''
+                                if fixture['score']['penalties']['homeTeam'] is not None:
+                                    penalty_home = '({})'.format(fixture['score']['penalties']['homeTeam'])
+                                    penalty_away = '({})'.format(fixture['score']['penalties']['awayTeam'])
+                                text = text + '{}{} - {}{}'.format(fixture['score']['fullTime']['homeTeam'], penalty_home, fixture['score']['fullTime']['awayTeam'], penalty_away)
+                                break
+                if text == '':
+                    text = 'No Recent Matches!'
+                barca_bot.send_message(last_chat_id, text)
+                new_offset = last_update_id + 1
+
+            # fixtures response
+            elif last_chat_text.lower() == 'fix' or last_chat_text.lower() == '/fix':
+                fixtures = data_bot.get_fix(datetime.now(), datetime.now()+timedelta(days=14))
+                count = 0
+                text = ''
+                for fixture in fixtures:
+                    if count > 4:
+                        break
+                    if fixture['status'] == 'SCHEDULED' and fixture['competition']['id'] in codes:
+                        text = text + '{}\n'.format(codes[fixture['competition']['id']])
+                        text = text + '{} VS {}\n'.format(fixture['homeTeam']['name'], fixture['awayTeam']['name'])
+                        time = datetime.strptime(fixture['utcDate'], '%Y-%m-%dT%H:%M:%SZ')
+                        time = time.replace(tzinfo=timezone.utc).astimezone(tz=timezone(timedelta(hours=5, minutes=30)))
+                        text = text + time.strftime('%a, %d %b\n%I:%M %p')
+                        text = text + '\n\n'
+                        count += 1
+                if text == '':
+                    text = 'No Upcoming Matches!'
+                barca_bot.send_message(last_chat_id, text)
+                new_offset = last_update_id + 1
+
+            # subscribe action
+            elif last_chat_text.lower() == 'subscribe' or last_chat_text.lower() == '/subscribe':
+                text = ''
+                db.execute("SELECT * FROM subscribers WHERE id = %s", (last_chat_id,))
+                rows = db.fetchall()
+                if len(rows) == 0:
+                    db.execute("INSERT INTO subscribers(id) VALUES(%s)", (last_chat_id,))
+                    conn.commit()
+                    if isGroup == False:
+                        text = 'Cheers {}! You are now subscribed for automatic updates! Forca Barca!'.format(last_chat_name)
+                    else:
+                        text = 'Cheers! This group is now subscribed for automatic updates! Forca Barca!'
+                else:
+                    if isGroup == False:
+                        text = '{}, you are already Subscribed'.format(last_chat_name)
+                    else:
+                        text = 'This group is already Subscribed'
+                barca_bot.send_message(last_chat_id, text)
+                new_offset = last_update_id + 1
+
+            # unsubscribe action
+            elif last_chat_text.lower() == 'unsubscribe' or last_chat_text.lower() == '/unsubscribe':
+                text = ''
+                db.execute("SELECT * FROM subscribers WHERE id = %s", (last_chat_id,))
+                rows = db.fetchall()
+                if len(rows) != 0:
+                    db.execute("DELETE FROM subscribers WHERE id = %s", (last_chat_id,))
+                    conn.commit()
+                    if isGroup == False:
+                        text = '{}, you are now unsubscribed from automatic updates! You will be missed!'.format(last_chat_name)
+                    else:
+                        text = 'This group is now unsubscribed from automatic updates! You will be missed!'
+                else:
+                    if isGroup == False:
+                        text = '{}, you are already Unsubscribed'.format(last_chat_name)
+                    else:
+                        text = 'This group is already Unsubscribed'
+                barca_bot.send_message(last_chat_id, text)
+                new_offset = last_update_id + 1
+        
+        fixtures = data_bot.get_fix(datetime.now()-timedelta(days=2), datetime.now())
+        # goal update
+        text = ''
+        for fixture in fixtures:
+            if (fixture['status'] == 'IN_PLAY' or fixture['status'] == 'PAUSED') and fixture['competition']['id'] in codes:
+                if fixture['score']['fullTime']['homeTeam'] == last_home_goal and fixture['score']['fullTime']['awayTeam'] == last_away_goal:
+                    break
+                text = text + '{}\n'.format(codes[fixture['competition']['id']])
+                text = text + '{} VS {}\n'.format(fixture['homeTeam']['name'], fixture['awayTeam']['name'])
+                text = text + '[IN PROGRESS]\n'
+                penalty_home = ''
+                penalty_away = ''
+                if fixture['score']['penalties']['homeTeam'] is not None:
+                    penalty_home = '({})'.format(fixture['score']['penalties']['homeTeam'])
+                    penalty_away = '({})'.format(fixture['score']['penalties']['awayTeam'])
+                text = text + '{}{} - {}{}'.format(fixture['score']['fullTime']['homeTeam'], penalty_home, fixture['score']['fullTime']['awayTeam'], penalty_away)
+                break
+            elif fixture['status'] != 'IN_PLAY' and fixture['status'] != 'PAUSED' and fixture['competition']['id'] in codes:
+                last_home_goal = 0
+                last_away_goal = 0
+                break
+
+        if text != '':
+            text = 'Score Update:\n\n' + text
+            db.execute("SELECT * FROM subscribers")
+            rows = db.fetchall()
+            for row in rows:
+                barca_bot.send_message(int(row[0]), text)
+            last_home_goal = fixture['score']['fullTime']['homeTeam']
+            last_away_goal = fixture['score']['fullTime']['awayTeam']
+
+        # match reminder
+        text = ''
+        diff = datetime.now() - last_notif
+        if diff.total_seconds() > 40000:
+            for fixture in fixtures:
+                if fixture['status'] == 'SCHEDULED' and fixture['competition']['id'] in codes:
+                    time = datetime.strptime(fixture['utcDate'], '%Y-%m-%dT%H:%M:%SZ')
+                    diff = time - datetime.now()
+                    if diff.total_seconds() > 900:
+                        break
                     text = text + '{}\n'.format(codes[fixture['competition']['id']])
                     text = text + '{} VS {}\n'.format(fixture['homeTeam']['name'], fixture['awayTeam']['name'])
-                    text = text + '[IN PROGRESS]\n'
-                    penalty_home = ''
-                    penalty_away = ''
-                    if fixture['score']['penalties']['homeTeam'] is not None:
-                        penalty_home = '({})'.format(fixture['score']['penalties']['homeTeam'])
-                        penalty_away = '({})'.format(fixture['score']['penalties']['awayTeam'])
-                    text = text + '{}{} - {}{}'.format(fixture['score']['fullTime']['homeTeam'], penalty_home, fixture['score']['fullTime']['awayTeam'], penalty_away)
+                    time = time.replace(tzinfo=timezone.utc).astimezone(tz=timezone(timedelta(hours=5, minutes=30)))
+                    text = text + time.strftime('%a, %d %b\n%I:%M %p')
+                    text = text + '\n\n'
                     break
-                elif fixture['status'] != 'IN_PLAY' and fixture['competition']['id'] in codes:
-                    last_home_goal = 0
-                    last_away_goal = 0
-                    break
-
             if text != '':
-                text = 'Score Update:\n\n' + text
+                text = 'Reminder: Match starts in 15 minutes!\n\n' + text
                 db.execute("SELECT * FROM subscribers")
                 rows = db.fetchall()
                 for row in rows:
                     barca_bot.send_message(int(row[0]), text)
-
-            # match reminder
-            text = ''
-            diff = datetime.now() - last_notif
-            if diff.total_seconds() > 40000:
-                for fixture in fixtures:
-                    if fixture['status'] == 'SCHEDULED' and fixture['competition']['id'] in codes:
-                        time = datetime.strptime(fixture['utcDate'], '%Y-%m-%dT%H:%M:%SZ')
-                        diff = time - datetime.now()
-                        if diff.total_seconds() > 900:
-                            break
-                        last_notif = datetime.now()
-                        text = text + '{}\n'.format(codes[fixture['competition']['id']])
-                        text = text + '{} VS {}\n'.format(fixture['homeTeam']['name'], fixture['awayTeam']['name'])
-                        time = time.replace(tzinfo=timezone.utc).astimezone(tz=timezone(timedelta(hours=5, minutes=30)))
-                        text = text + time.strftime('%a, %d %b\n%I:%M %p')
-                        text = text + '\n\n'
-                        break
-                if text != '':
-                    text = 'Reminder: Match starts in 15 minutes!\n\n' + text
-                    db.execute("SELECT * FROM subscribers")
-                    rows = db.fetchall()
-                    for row in rows:
-                        barca_bot.send_message(int(row[0]), text)
-        except:
-            pass
+                last_notif = datetime.now()
 
 if __name__ == '__main__':  
     try:
