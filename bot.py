@@ -13,6 +13,8 @@ class BotHandler:
     def __init__(self, token):
         self.token = token
         self.api_url = "https://api.telegram.org/bot{}/".format(token)
+        self.keyboardLayout = json.dumps({'keyboard': [['Score'], ['Fixtures'], ['Subscribe'], ['Unsubscribe']]})
+
 
     def get_updates(self, offset=None, timeout=30):
         method = 'getUpdates'
@@ -22,7 +24,7 @@ class BotHandler:
         return result_json
 
     def send_message(self, chat_id, text):
-        params = {'chat_id': chat_id, 'text': text}
+        params = {'chat_id': chat_id, 'text': text, 'reply_markup': self.keyboardLayout}
         method = 'sendMessage'
         resp = requests.post(self.api_url + method, params)
         return resp
@@ -164,9 +166,9 @@ def subscribe(last_chat_id, last_chat_name, isGroup, conn, db):
         db.execute("INSERT INTO subscribers(id) VALUES(%s)", (last_chat_id,))
         conn.commit()
         if isGroup == False:
-            text = 'Cheers {}! You are now subscribed for automatic updates! Forca Barca!'.format(last_chat_name)
+            text = 'Cheers {}! You are now subscribed for automatic updates and reminders! Forca Barca!'.format(last_chat_name)
         else:
-            text = 'Cheers! This group is now subscribed for automatic updates! Forca Barca!'
+            text = 'Cheers! This group is now subscribed for automatic updates and reminders! Forca Barca!'
     else:
         if isGroup == False:
             text = '{}, you are already Subscribed'.format(last_chat_name)
@@ -184,9 +186,9 @@ def unsubscribe(last_chat_id, last_chat_name, isGroup, conn, db):
         db.execute("DELETE FROM subscribers WHERE id = %s", (last_chat_id,))
         conn.commit()
         if isGroup == False:
-            text = '{}, you are now unsubscribed from automatic updates! You will be missed!'.format(last_chat_name)
+            text = '{}, you are now unsubscribed from automatic updates and reminders! You will be missed!'.format(last_chat_name)
         else:
-            text = 'This group is now unsubscribed from automatic updates! You will be missed!'
+            text = 'This group is now unsubscribed from automatic updates and reminders! You will be missed!'
     else:
         if isGroup == False:
             text = '{}, you are already Unsubscribed'.format(last_chat_name)
@@ -224,7 +226,7 @@ def chat():
                     score(last_chat_id, db)
 
                 # fixtures response
-                elif last_chat_text.lower() == 'fix' or last_chat_text.lower() == '/fix':
+                elif last_chat_text.lower() == 'fixtures' or last_chat_text.lower() == '/fixtures':
                     fixtures(last_chat_id, db)
 
                 # subscribe action
@@ -235,6 +237,10 @@ def chat():
                 elif last_chat_text.lower() == 'unsubscribe' or last_chat_text.lower() == '/unsubscribe':
                     unsubscribe(last_chat_id, last_chat_name, isGroup, conn2, db)
                 
+                # start action
+                elif last_chat_text.lower() == 'start' or last_chat_text.lower() == '/start':
+                    barca_bot.send_message(last_chat_id, "Welcome to BarcaBot!")
+
                 new_offset = last_update_id + 1
         except (KeyboardInterrupt, SystemExit, Exception) as e:
             print(e)
