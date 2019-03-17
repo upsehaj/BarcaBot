@@ -81,7 +81,7 @@ def fixtures_async():
             fixtures = data_bot.fetch_fixtures(datetime.now()-timedelta(days=2), datetime.now()+timedelta(days=1))
             db.execute("UPDATE fixtures SET update_reminder=%s", (fixtures,))
             conn1.commit()
-            sleep(20)
+            sleep(21)
         except (KeyboardInterrupt, SystemExit, Exception) as e:
             print(e)
     
@@ -279,6 +279,7 @@ def send_updates_reminder():
                     break
                 else:
                     db.execute("UPDATE scores SET last_home_goal=0, last_away_goal=0")
+                    sleep(20)
 
             if text != '':
                 text = 'Score Update:\n\n' + text
