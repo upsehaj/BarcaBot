@@ -264,7 +264,7 @@ def send_updates_reminder():
             for fixture in fixtures:
                 if (fixture['status'] == 'IN_PLAY' or fixture['status'] == 'PAUSED') and fixture['competition']['id'] in codes:
                     last_home_goal = db.execute("SELECT last_home_goal from scores")[0][0]
-                    last_away_goal = db.execute("SELECT last_home_goal from scores")[0][0]
+                    last_away_goal = db.execute("SELECT last_away_goal from scores")[0][0]
                     if fixture['score']['fullTime']['homeTeam'] == last_home_goal and fixture['score']['fullTime']['awayTeam'] == last_away_goal:
                         break
                     text = text + '{}\n'.format(codes[fixture['competition']['id']])
