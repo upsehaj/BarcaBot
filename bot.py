@@ -15,7 +15,6 @@ class BotHandler:
         self.api_url = "https://api.telegram.org/bot{}/".format(token)
         self.keyboardLayout = json.dumps({'keyboard': [['Score'], ['Fixtures'], ['Subscribe'], ['Unsubscribe']]})
 
-
     def get_updates(self, offset=None, timeout=30):
         method = 'getUpdates'
         params = {'timeout': timeout, 'offset': offset}
@@ -74,12 +73,10 @@ def fixtures_async():
 
     while True:
         try:
-            fixtures = data_bot.fetch_fixtures(datetime.now()-timedelta(days=7), datetime.now()+timedelta(days=1))
-            db.execute("UPDATE fixtures SET score=%s", (fixtures,))
-            fixtures = data_bot.fetch_fixtures(datetime.now(), datetime.now()+timedelta(days=14))
-            db.execute("UPDATE fixtures SET matches=%s", (fixtures,))
-            fixtures = data_bot.fetch_fixtures(datetime.now()-timedelta(days=2), datetime.now()+timedelta(days=1))
-            db.execute("UPDATE fixtures SET update_reminder=%s", (fixtures,))
+            fixtures1 = data_bot.fetch_fixtures(datetime.now()-timedelta(days=7), datetime.now()+timedelta(days=1))
+            fixtures2 = data_bot.fetch_fixtures(datetime.now(), datetime.now()+timedelta(days=14))
+            fixtures3 = data_bot.fetch_fixtures(datetime.now()-timedelta(days=2), datetime.now()+timedelta(days=1))
+            db.execute("UPDATE fixtures SET score=%s, matches=%s, update_reminder=%s", (fixtures1, fixtures2, fixtures3))
             conn1.commit()
             sleep(21)
         except (KeyboardInterrupt, SystemExit, Exception) as e:
